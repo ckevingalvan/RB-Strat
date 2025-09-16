@@ -1,0 +1,39 @@
+//@version=5
+indicator("Custom Polyline RB", overlay=true)
+
+// ───────────────────────────────
+// SETTINGS
+// ───────────────────────────────
+lineColor = color.new(color.white, 50)   // white, 50% opacity
+lineWidth = 1                            // thinnest line
+
+// ───────────────────────────────
+// DEFINE POINTS (relative to last bar)
+// ───────────────────────────────
+p0_x = bar_index - 6
+p0_y = 3694.518
+
+p1_x = bar_index - 5
+p1_y = 3695.551
+
+p2_x = bar_index - 2
+p2_y = 3693.003
+
+p3_x = bar_index - 1
+p3_y = 3693.861
+
+// ───────────────────────────────
+// CREATE LINES
+// ───────────────────────────────
+var line l0 = na
+var line l1 = na
+var line l2 = na
+
+if barstate.islast
+    line.delete(l0)
+    line.delete(l1)
+    line.delete(l2)
+
+    l0 := line.new(p0_x, p0_y, p1_x, p1_y, xloc=xloc.bar_index, color=lineColor, width=lineWidth, extend=extend.none)
+    l1 := line.new(p1_x, p1_y, p2_x, p2_y, xloc=xloc.bar_index, color=lineColor, width=lineWidth, extend=extend.none)
+    l2 := line.new(p2_x, p2_y, p3_x, p3_y, xloc=xloc.bar_index, color=lineColor, width=lineWidth, extend=extend.none)
