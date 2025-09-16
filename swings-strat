@@ -1,0 +1,67 @@
+//@version=5
+indicator("Swing Identifier with Lines (use time)", overlay=true)
+
+// style
+lineColor = color.new(color.white, 50)  // white, 50% opacity
+lineWidth  = 1                           // thinnest
+
+// helper: determine candle type
+f_candle_type(_open, _close) =>
+    _open < _close ? "Bullish" : "Bearish"
+
+// persistent arrays to hold swings (store times, highs, lows, types)
+var swing_types = array.new_string()
+var swing_highs = array.new_float()
+var swing_lows  = array.new_float()
+var swing_times = array.new_int()   // store time (UTC ms)
+var swing_lines = array.new_line()
+
+// Build/maintain swings using closed bars
+if barstate.isconfirmed
+    candle_type = f_candle_type(open, close)
+
+    if array.size(swing_types) == 0
+        array.push(swing_types, candle_type)
+        array.push(swing_highs, high)
+        array.push(swing_lows,  low)
+        array.push(swing_times, time)
+    else
+        last_idx = array.size(swing_types) - 1
+        last_type = array.get(swing_types, last_idx)
+
+        if candle_type == last_type
+            // update last swing's high/low and last time
+            array.set(swing_highs, last_idx, math.max(array.get(swing_highs, last_idx), high))
+            array.set(swing_lows,  last_idx, math.min(array.get(swing_lows,  last_idx), low))
+            array.set(swing_times, last_idx, time)
+        else
+            // start a new swing
+            array.push(swing_types, candle_type)
+            array.push(swing_highs, high)
+            array.push(swing_lows,  low)
+            array.push(swing_times, time)
+
+// On script's last bar: clear old lines and draw connectors using time
+if barstate.islast
+    // delete any old lines first
+    if array.size(swing_lines) > 0
+        for j = 0 to array.size(swing_lines) - 1
+            line.delete(array.get(swing_lines, j))
+        array.clear(swing_lines)
+
+    // draw straight-line connectors between consecutive swings (if >=2 swings)
+    n = array.size(swing_types)
+    if n >= 2
+        for i = 0 to n - 2
+            ctype      = array.get(swing_types, i)
+            next_ctype = array.get(swing_types, i + 1)
+
+            x1 = array.get(swing_times, i)
+            x2 = array.get(swing_times, i + 1)
+
+            y1 = ctype == "Bullish" ? array.get(swing_highs, i) : array.get(swing_lows, i)
+            y2 = next_ctype == "Bullish" ? array.get(swing_highs, i + 1) : array.get(swing_lows, i + 1)
+
+            // create the line anchored by timestamps
+            l = line.new(x1 = x1, y1 = y1, x2 = x2, y2 = y2, xloc = xloc.bar_time, extend = extend.none, color = lineColor, width = lineWidth)
+            array.push(swing_lines, l)
